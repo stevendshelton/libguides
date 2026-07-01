@@ -1,10 +1,9 @@
 <script>
 (function () {
 
-  // Run only on A–Z page
   if (!location.pathname.includes("/az/databases")) return;
 
-  window.addEventListener("load", function () {
+  function initAzSearchEnhancements() {
 
     /* ===============================
        BASIC PAGE ADJUSTMENTS
@@ -26,43 +25,16 @@
     const input = document.querySelector(".s-lg-az-search");
     if (!input) return;
 
-    //  Disable LibGuides native search listeners
+    // Disable LibGuides native search listeners
     ["input", "keydown", "keyup"].forEach(evt => {
       input.addEventListener(evt, e => e.stopPropagation());
     });
 
-    //  Prevent form submit side effects
+    // Prevent form submit side effects
     const form = input.closest("form");
     if (form) {
       form.addEventListener("submit", e => e.preventDefault());
     }
-
-    /* ===============================
-       SUBJECT FILTER HANDLING (NEW)
-    =============================== */
-
-    //  Flag to suspend text filtering while subject filter runs
-    let suspendTextFilter = false;
-
-    //  When subject changes, clear text search and suspend filtering
-
-jQuery(".s-lg-sel-subjects").on("change", function () {
-  // Suspend custom text filtering
-  suspendTextFilter = true;
-
-  // Clear the visible text box
-  input.value = "";
-  clearBtn.style.display = "none";
-
-  //  Safely clear LibGuides' text search state
-  if (window.springSpace && springSpace.azPublicObj) {
-    springSpace.azPublicObj.clearAzSelection("s-lg-az-search");
-  }
-
-  // Do NOT dispatch input event
-  // LibGuides will re-render the list based on subject alone
-});
-
 
     /* ===============================
        CLEAR (✕) BUTTON
@@ -95,6 +67,24 @@ jQuery(".s-lg-sel-subjects").on("change", function () {
       clearBtn.style.display = "none";
       input.dispatchEvent(new Event("input", { bubbles: true }));
       input.focus();
+    });
+
+    /* ===============================
+       SUBJECT FILTER HANDLING (FIXED)
+    =============================== */
+
+    let suspendTextFilter = false;
+
+    jQuery(".s-lg-sel-subjects").on("change", function () {
+      suspendTextFilter = true;
+
+      input.value = "";
+      clearBtn.style.display = "none";
+
+      // Safely clear LibGuides text search
+      if (window.springSpace && springSpace.azPublicObj) {
+        springSpace.azPublicObj.clearAzSelection("s-lg-az-search");
+      }
     });
 
     /* ===============================
@@ -168,12 +158,11 @@ jQuery(".s-lg-sel-subjects").on("change", function () {
       const query = this.value.trim().toLowerCase();
       clearBtn.style.display = query ? "block" : "none";
 
-      //  If subject filter just ran, ignore this reset
+      // If subject filter just ran, ignore reset
       if (suspendTextFilter && query === "") {
         return;
       }
 
-      //  User typed again → re-enable text filtering
       suspendTextFilter = false;
 
       /* ---------- RESET ---------- */
@@ -247,8 +236,34 @@ jQuery(".s-lg-sel-subjects").on("change", function () {
         resultCount.innerHTML = `<span>${visibleCount} Databases</span>`;
       }
     });
+  }
 
-  });
+  /* ===============================
+     PAGE LIFECYCLE (FIXED)
+  =============================== */
+
+window.addEventListener("pageshow", function () {
+  window.__azEnhancementsInitialized = false;
+
+  const tryInit = () => {
+    const input = document.querySelector(".s-lg-az-search");
+    const items = document.querySelectorAll(".az-item");
+
+    // ✅ A–Z UI not ready yet
+    if (!input || items.length === 0) {
+      setTimeout(tryInit, 100);
+      return;
+    }
+
+    // ✅ Ready → initialize once
+    if (!window.__azEnhancementsInitialized) {
+      window.__azEnhancementsInitialized = true;
+      initAzSearchEnhancements();
+    }
+  };
+
+  tryInit();
+});
 
 })();
 </script>
