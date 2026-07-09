@@ -1,27 +1,195 @@
 <script>
   /**
- * A–Z Database Search Enhancements (v4)
+ * A–Z Database Search Enhancements (v8)
  *
- * v4 changes (clear native search on subject select):
- *   - When a subject filter is selected, clears the LibGuides internal
- *     search state via springSpace.azPublicObj so leftover search terms
- *     don't combine with the subject filter (fixing "0 Databases Found
- *     for: Biology + med" issue)
- *   - Calls clearAzSelection AND resets the native hidden/original input
- *   - All v3 improvements carried forward (MutationObserver, disable/
- *     enable search, clone input, debounce, scoring, a11y, AbortController)
+ * v8 changes (Alpha-bar UX):
+ *   - Active letter in the A–Z index bar is highlighted with a
+ *     prominent pill/badge style so users know which filter is on.
+ *   - A dismissible "filter chip" appears below the search bar
+ *     (e.g.  ▸ Showing: "B" ✕ ) giving users an obvious reset.
+ *   - Clicking the chip's ✕ triggers the "All" link, clearing
+ *     the alpha filter.
+ *   - Starting a text search while an alpha filter is active
+ *     auto-clears the alpha filter to avoid conflicting states.
+ *   - All prior improvements (v3–v7) carried forward.
+ *
+ * v7: JS-enforced Select2 font sizing
+ * v6: CSS targeting for multi-select textarea
+ * v5: font-size harmonization (single-select targets)
+ * v4: clear native search on subject select
+ * v3: MutationObserver, disable/enable search, clone input,
+ *     debounce, scoring, a11y, AbortController
  */
 (function () {
   "use strict";
 
   if (!location.pathname.includes("/az/databases")) return;
 
+  /* ─── Inject styles (once) ─── */
+  if (!document.getElementById("az-enhance-styles")) {
+    const style = document.createElement("style");
+    style.id = "az-enhance-styles";
+    style.textContent = `
+      /* ── Match Subjects dropdown to search input font size ── */
+
+      .s-lg-az-search {
+        font-size: 1rem !important;
+      }
+
+      /* === Select2 MULTI-SELECT variant === */
+
+      .select2-container .select2-search--inline .select2-search__field,
+      .select2-container--default .select2-search--inline .select2-search__field,
+      .select2-container--default .select2-selection--multiple .select2-search--inline .select2-search__field,
+      textarea.select2-search__field {
+        font-size: 1rem !important;
+      }
+
+      .s-lg-sel-subjects + .select2-container .select2-selection--multiple,
+      .select2-container .select2-selection--multiple {
+        font-size: 1rem !important;
+        min-height: 2.4em;
+        display: flex;
+        align-items: center;
+      }
+
+      .s-lg-sel-subjects + .select2-container .select2-selection__choice,
+      .select2-container .select2-selection__choice {
+        font-size: 1rem !important;
+      }
+
+      .s-lg-sel-subjects + .select2-container .select2-selection__choice__remove,
+      .select2-container .select2-selection__choice__remove {
+        font-size: 1rem !important;
+      }
+
+      /* === Select2 SINGLE-SELECT variant (fallback) === */
+
+      .s-lg-sel-subjects + .select2-container .select2-selection--single {
+        display: flex;
+        align-items: center;
+      }
+
+      .s-lg-sel-subjects + .select2-container .select2-selection--single .select2-selection__rendered {
+        font-size: 1rem !important;
+      }
+
+      .s-lg-sel-subjects + .select2-container .select2-selection__placeholder {
+        font-size: 1rem !important;
+      }
+
+      /* === Dropdown list === */
+
+      .select2-container--default .select2-results__option {
+        font-size: 1rem !important;
+      }
+
+      .select2-container--default .select2-search--dropdown .select2-search__field {
+        font-size: 1rem !important;
+      }
+
+      .s-lg-sel-subjects {
+        font-size: 1rem !important;
+      }
+
+      /* ── Alpha-bar active letter highlighting ── */
+
+      #s-lg-az-index a.az-letter-active {
+        background-color: #1a3c5e !important;
+        color: #fff !important;
+        border-radius: 4px;
+        padding: 2px 8px;
+        text-decoration: none;
+        font-weight: 700;
+      }
+
+      /* ── Alpha filter chip ── */
+
+      .az-alpha-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin: 8px 0 4px 0;
+        padding: 5px 14px;
+        background: #e8eff5;
+        border: 1px solid #b0c7de;
+        border-radius: 20px;
+        font-size: 0.92rem;
+        font-weight: 600;
+        color: #1a3c5e;
+        line-height: 1;
+      }
+
+      .az-alpha-chip .az-chip-label {
+        pointer-events: none;
+      }
+
+      .az-alpha-chip .az-chip-close {
+        border: none;
+        background: transparent;
+        color: #1a3c5e;
+        font-size: 16px;
+        cursor: pointer;
+        padding: 0 0 0 2px;
+        line-height: 1;
+        font-weight: 700;
+        opacity: 0.7;
+        transition: opacity 0.15s;
+      }
+
+      .az-alpha-chip .az-chip-close:hover {
+        opacity: 1;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  /* ─── JS-enforced font-size on Select2 textareas ─── */
+  const AZ_FONT_SIZE = "1rem";
+
+  function enforceSubjectFontSize() {
+    document.querySelectorAll(
+      "textarea.select2-search__field, .select2-search--inline .select2-search__field"
+    ).forEach(function (el) {
+      if (el.style.fontSize !== AZ_FONT_SIZE) {
+        el.style.setProperty("font-size", AZ_FONT_SIZE, "important");
+      }
+    });
+
+    document.querySelectorAll(".select2-selection--multiple").forEach(function (el) {
+      if (el.style.fontSize !== AZ_FONT_SIZE) {
+        el.style.setProperty("font-size", AZ_FONT_SIZE, "important");
+      }
+    });
+
+    document.querySelectorAll(".select2-selection__rendered").forEach(function (el) {
+      if (el.style.fontSize !== AZ_FONT_SIZE) {
+        el.style.setProperty("font-size", AZ_FONT_SIZE, "important");
+      }
+    });
+  }
+
+  enforceSubjectFontSize();
+  setTimeout(enforceSubjectFontSize, 500);
+  setTimeout(enforceSubjectFontSize, 1500);
+  setTimeout(enforceSubjectFontSize, 3000);
+
+  const select2Observer = new MutationObserver(function () {
+    enforceSubjectFontSize();
+  });
+
+  select2Observer.observe(document.body, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ["style", "class"]
+  });
+
   /* ─── State shared across init cycles ─── */
   let abortCtrl = null;
 
   function initAzSearchEnhancements() {
 
-    /* === Cleanup previous run (bfcache / re-init) === */
     if (abortCtrl) abortCtrl.abort();
     abortCtrl = new AbortController();
     const signal = abortCtrl.signal;
@@ -50,7 +218,6 @@
 
     const defaultPlaceholder = input.placeholder || "Search databases";
 
-    // Also prevent form submission
     const form = input.closest("form");
     if (form) {
       form.addEventListener("submit", e => e.preventDefault(), { signal });
@@ -62,7 +229,6 @@
     const wrapper = input.parentNode;
     wrapper.style.position = "relative";
 
-    // Remove any leftover clear button from a prior init
     const stale = wrapper.querySelector(".az-clear-btn");
     if (stale) stale.remove();
 
@@ -99,36 +265,16 @@
     /* ===========================
        MUTABLE STATE
     =========================== */
-    let subjectActive = false;   // true while a subject filter is selected
-    let data          = [];      // { element, name } for each .az-item
-    let originalOrder = [];      // snapshot of container children
-    let container     = null;    // parent of .az-item elements
-    let headings      = [];      // .s-lg-db-panel-title NodeList/Array
-    let noResults     = null;    // "No databases match" element
+    let suspendTextFilter = false;
 
     /* ===========================
-       (RE-)COLLECT DOM DATA
-       Called on init and after
-       every AJAX content swap.
+       COLLECT ITEMS + ORDER
     =========================== */
     function collectData() {
-      const items = document.querySelectorAll(".az-item");
-      headings    = Array.from(document.querySelectorAll(".s-lg-db-panel-title"));
+      const items    = document.querySelectorAll(".az-item");
+      const headings = document.querySelectorAll(".s-lg-db-panel-title");
 
-      if (items.length === 0) {
-        data = [];
-        originalOrder = [];
-        container = null;
-        return false;
-      }
-
-      container = items[0].parentNode;
-
-      // Snapshot original DOM order
-      originalOrder = Array.from(container.children);
-
-      // Build searchable data
-      data = Array.from(items).map(item => {
+      const data = Array.from(items).map(item => {
         const titleEl = item.querySelector(".az-title");
         return {
           element: item,
@@ -136,41 +282,15 @@
         };
       });
 
-      // Ensure no-results element exists inside the (possibly new) container
-      ensureNoResultsEl();
+      const container = items.length ? items[0].parentNode : null;
+      const originalOrder = container
+        ? Array.from(container.children)
+        : [];
 
-      return true;
+      return { items, headings, data, container, originalOrder };
     }
 
-    function ensureNoResultsEl() {
-      // If we already have one in this container, reuse it
-      if (noResults && noResults.parentNode === container) return;
-
-      // Check if one exists in the container already
-      let existing = container
-        ? container.querySelector("#az-no-results")
-        : document.getElementById("az-no-results");
-
-      if (existing) {
-        noResults = existing;
-      } else if (container) {
-        noResults = document.createElement("div");
-        noResults.id = "az-no-results";
-        noResults.setAttribute("role", "status");
-        Object.assign(noResults.style, {
-          display:    "none",
-          padding:    "1rem 0",
-          fontWeight: "600",
-          fontSize:   "1rem"
-        });
-        container.prepend(noResults);
-      }
-
-      if (noResults) {
-        noResults.textContent = "No databases match your search.";
-        noResults.style.display = "none";
-      }
-    }
+    let { items, headings, data, container, originalOrder } = collectData();
 
     /* ===========================
        RESULT COUNT (a11y)
@@ -182,167 +302,211 @@
     }
 
     /* ===========================
-       CLEAR NATIVE LIBGUIDES
-       SEARCH STATE
-       Removes any lingering search
-       term from the LG internal
-       state so it doesn't combine
-       with a subject filter.
+       NO RESULTS MESSAGE
+    =========================== */
+    let noResults = document.getElementById("az-no-results");
+    if (!noResults && container) {
+      noResults = document.createElement("div");
+      noResults.id          = "az-no-results";
+      noResults.textContent = "No databases match your search.";
+      noResults.style.display    = "none";
+      noResults.style.padding    = "1rem 0";
+      noResults.style.fontWeight = "600";
+      noResults.style.fontSize   = "1rem";
+      container.prepend(noResults);
+    }
+
+    /* ===========================
+       CLEAR NATIVE LG SEARCH
     =========================== */
     function clearNativeSearchState() {
-      // 1. Clear via springSpace API (removes the search "pill" / token)
       try {
         if (window.springSpace && springSpace.azPublicObj) {
           springSpace.azPublicObj.clearAzSelection("s-lg-az-search");
         }
-      } catch (e) {
-        // Silently ignore if API isn't available
-      }
+      } catch (_) {}
 
-      // 2. Also reset any native search input that LG may reference
-      //    (the original input might have been re-created by LG after
-      //    our clone, or there may be a hidden one)
-      document.querySelectorAll(
-        '.s-lg-az-search, input[name="search"], input[id="s-lg-az-search"]'
-      ).forEach(function (el) {
-        if (el !== input) {
-          el.value = "";
-        }
+      document.querySelectorAll(".s-lg-az-search").forEach(el => {
+        if (el !== input) el.value = "";
       });
 
-      // 3. Clear our cloned input too
-      input.value = "";
+      input.value            = "";
       clearBtn.style.display = "none";
     }
 
     /* ===========================
-       ENABLE / DISABLE SEARCH
+       DISABLE / ENABLE SEARCH
     =========================== */
     function disableSearch() {
-      subjectActive = true;
-
-      // ★ Clear native LG search state BEFORE LG fires its AJAX request
-      //   so the subject-only query doesn't include a stale search term
       clearNativeSearchState();
-
-      input.disabled = true;
-      input.placeholder = "Clear subject filter to search";
-      input.style.opacity = "0.55";
-      input.style.cursor  = "not-allowed";
-      clearBtn.style.display = "none";
+      input.disabled           = true;
+      input.style.opacity      = "0.55";
+      input.style.cursor       = "not-allowed";
+      input.placeholder        = "Clear subject filter to search";
     }
 
     function enableSearch() {
-      subjectActive = false;
-      input.disabled = false;
-      input.placeholder = defaultPlaceholder;
-      input.style.opacity = "";
-      input.style.cursor  = "";
+      input.disabled           = false;
+      input.style.opacity      = "";
+      input.style.cursor       = "";
+      input.placeholder        = defaultPlaceholder;
     }
 
     /* ===========================
-       MUTATION OBSERVER
-       Watches for LibGuides AJAX
-       content swaps and refreshes
-       cached data afterwards.
+       ALPHA-BAR — DETECT STATE
+       FROM URL ON PAGE LOAD
     =========================== */
-    let mutationTimer = null;
+    let activeAlphaLetter = null;
 
-    // We observe the main content area so we catch full container replacements
-    const observeTarget =
-      document.getElementById("s-lg-az-content") ||
-      document.getElementById("s-lg-az-results") ||
-      document.querySelector(".s-lg-az-result") ||
-      (document.querySelector(".az-item") || {}).parentNode;
+    function getAlphaFromURL() {
+      const params = new URLSearchParams(window.location.search);
+      const a = params.get("a");
+      if (a && /^[a-z#]$/i.test(a)) return a.toUpperCase();
+      return null;
+    }
 
-    // Walk up one level to catch complete container swaps
-    const observeRoot = observeTarget
-      ? (observeTarget.parentNode || observeTarget)
-      : document.body;
+    function findAllLink() {
+      if (!alphaBar) return null;
+      const links = alphaBar.querySelectorAll("a");
+      for (const link of links) {
+        const text = link.textContent.trim().toLowerCase();
+        if (text === "all") return link;
+        // Also check href — "All" link usually has no ?a= param
+        if (link.href && !link.href.includes("?a=")) return link;
+      }
+      return null;
+    }
 
-    const observer = new MutationObserver(function () {
-      // Debounce: LibGuides may fire many mutations during one AJAX swap
-      clearTimeout(mutationTimer);
-      mutationTimer = setTimeout(onContentSettled, 200);
-    });
+    function highlightActiveLetter(letter) {
+      if (!alphaBar) return;
+      // Remove previous highlights
+      alphaBar.querySelectorAll("a.az-letter-active").forEach(a => {
+        a.classList.remove("az-letter-active");
+      });
+      if (!letter) return;
 
-    observer.observe(observeRoot, { childList: true, subtree: true });
-
-    // Tear down observer on abort
-    signal.addEventListener("abort", () => observer.disconnect());
-
-    function onContentSettled() {
-      // Re-collect data from the fresh DOM
-      const ok = collectData();
-      if (!ok) return;
-
-      // Determine if a subject filter is currently active
-      const subjectDropdown = document.querySelector(".s-lg-sel-subjects");
-      const subjectValue    = subjectDropdown ? subjectDropdown.value : "";
-      const isDefault       = !subjectValue || subjectValue === "" ||
-                               subjectValue === "0"  || subjectValue === "all";
-
-      if (isDefault) {
-        enableSearch();
-      } else {
-        // Keep search disabled; make sure input stays clear
-        subjectActive = true;
-        input.value = "";
-        input.disabled = true;
-        input.placeholder = "Clear subject filter to search";
-        input.style.opacity = "0.55";
-        input.style.cursor  = "not-allowed";
-        clearBtn.style.display = "none";
+      const links = alphaBar.querySelectorAll("a");
+      for (const link of links) {
+        if (link.textContent.trim().toUpperCase() === letter.toUpperCase()) {
+          link.classList.add("az-letter-active");
+          break;
+        }
       }
     }
 
-    /* ===========================
-       SUBJECT DROPDOWN —
-       Listen for changes via jQuery
-       (LibGuides uses jQuery)
-    =========================== */
-    if (window.jQuery) {
-      // Namespaced so we can cleanly unbind on re-init
-      jQuery(document).off("change.azEnhance", ".s-lg-sel-subjects");
-      jQuery(document).on("change.azEnhance", ".s-lg-sel-subjects", function () {
-        const val = jQuery(this).val();
-        const isDefault = !val || val === "" || val === "0" || val === "all";
-
-        if (isDefault) {
-          enableSearch();
+    /* ── Filter chip ── */
+    function getOrCreateChipContainer() {
+      let chipContainer = document.getElementById("az-alpha-chip-container");
+      if (!chipContainer) {
+        chipContainer = document.createElement("div");
+        chipContainer.id = "az-alpha-chip-container";
+        // Insert right after the search form area
+        const searchForm = input.closest("form") || input.closest(".s-lg-az-search-bar") || wrapper.parentNode;
+        if (searchForm && searchForm.parentNode) {
+          searchForm.parentNode.insertBefore(chipContainer, searchForm.nextSibling);
         } else {
-          disableSearch();
+          // Fallback: insert before the alpha bar
+          if (alphaBar && alphaBar.parentNode) {
+            alphaBar.parentNode.insertBefore(chipContainer, alphaBar);
+          }
         }
-      });
+      }
+      return chipContainer;
+    }
 
-      signal.addEventListener("abort", () => {
-        jQuery(document).off("change.azEnhance", ".s-lg-sel-subjects");
-      });
+    function showAlphaChip(letter) {
+      const chipContainer = getOrCreateChipContainer();
+      chipContainer.innerHTML = "";
+
+      const chip = document.createElement("span");
+      chip.className = "az-alpha-chip";
+
+      const label = document.createElement("span");
+      label.className = "az-chip-label";
+      label.textContent = 'Showing: "' + letter.toUpperCase() + '"';
+
+      const closeBtn = document.createElement("button");
+      closeBtn.className  = "az-chip-close";
+      closeBtn.type       = "button";
+      closeBtn.innerHTML  = "&#215;";
+      closeBtn.setAttribute("aria-label", "Clear letter filter");
+
+      closeBtn.addEventListener("click", function () {
+        clearAlphaFilter();
+      }, { signal });
+
+      chip.appendChild(label);
+      chip.appendChild(closeBtn);
+      chipContainer.appendChild(chip);
+    }
+
+    function hideAlphaChip() {
+      const chipContainer = document.getElementById("az-alpha-chip-container");
+      if (chipContainer) chipContainer.innerHTML = "";
+    }
+
+    function clearAlphaFilter() {
+      const allLink = findAllLink();
+      if (allLink) {
+        allLink.click();   // navigates to the unfiltered page
+      } else {
+        // Fallback: navigate manually
+        const url = new URL(window.location);
+        url.searchParams.delete("a");
+        window.location.href = url.toString();
+      }
+    }
+
+    /* ── Apply alpha state on load ── */
+    activeAlphaLetter = getAlphaFromURL();
+
+    if (activeAlphaLetter) {
+      highlightActiveLetter(activeAlphaLetter);
+      showAlphaChip(activeAlphaLetter);
     }
 
     /* ===========================
-       CLEAR-FILTER / RESET
-       BUTTONS
+       SUBJECT FILTER HANDLING
+    =========================== */
+    jQuery(".s-lg-sel-subjects").off("change.azEnhance")
+      .on("change.azEnhance", function () {
+        suspendTextFilter = true;
+        disableSearch();
+      });
+
+    /* ===========================
+       CLEAR / RESET BUTTONS
     =========================== */
     function hookClearButtons() {
       const selectors = [
         "#s-lg-az-btn-clear-all",
         ".az-btn-clear",
-        ".btn-clear-filters",
-        '[data-action="clear"]'
+        ".s-lg-az-btn-clear",
+        'button[data-action="clear"]',
+        'a[data-action="clear"]'
       ];
 
-      selectors.forEach(sel => {
-        document.querySelectorAll(sel).forEach(btn => {
-          btn.addEventListener("click", () => enableSearch(), { signal });
-        });
+      document.querySelectorAll(selectors.join(",")).forEach(btn => {
+        btn.addEventListener("click", function () {
+          setTimeout(() => {
+            enableSearch();
+            hideAlphaChip();
+          }, 150);
+        }, { signal });
       });
 
-      // Also catch any button whose text says "Clear" near the filter area
-      document.querySelectorAll("button, .btn").forEach(btn => {
-        const txt = btn.textContent.trim().toLowerCase();
-        if (txt.includes("clear") || txt.includes("reset")) {
-          btn.addEventListener("click", () => enableSearch(), { signal });
+      document.querySelectorAll("button, a").forEach(el => {
+        const txt = el.textContent.trim().toLowerCase();
+        if (
+          (txt.includes("clear") || txt.includes("reset")) &&
+          el.closest(".s-lg-az-search-bar, .s-lg-az-filters, .s-lg-az-controls, form")
+        ) {
+          el.addEventListener("click", function () {
+            setTimeout(() => {
+              enableSearch();
+              hideAlphaChip();
+            }, 150);
+          }, { signal });
         }
       });
     }
@@ -350,11 +514,62 @@
     hookClearButtons();
 
     /* ===========================
+       MUTATION OBSERVER — AJAX
+    =========================== */
+    let mutationTimer = null;
+
+    const contentObserver = new MutationObserver(function () {
+      clearTimeout(mutationTimer);
+      mutationTimer = setTimeout(function () {
+
+        const refresh = collectData();
+        items         = refresh.items;
+        headings      = refresh.headings;
+        data          = refresh.data;
+        container     = refresh.container;
+        originalOrder = refresh.originalOrder;
+
+        if (!document.getElementById("az-no-results") && container) {
+          noResults = document.createElement("div");
+          noResults.id          = "az-no-results";
+          noResults.textContent = "No databases match your search.";
+          noResults.style.display    = "none";
+          noResults.style.padding    = "1rem 0";
+          noResults.style.fontWeight = "600";
+          noResults.style.fontSize   = "1rem";
+          container.prepend(noResults);
+        }
+
+        hookClearButtons();
+
+        const subjectDd = document.querySelector(".s-lg-sel-subjects");
+        const subjectVal = subjectDd ? jQuery(subjectDd).val() : null;
+        const hasSubject = Array.isArray(subjectVal)
+          ? subjectVal.length > 0
+          : (subjectVal && subjectVal !== "" && subjectVal !== "0");
+
+        if (hasSubject) {
+          disableSearch();
+        } else {
+          enableSearch();
+        }
+      }, 200);
+    });
+
+    const azResults = document.getElementById("s-lg-az-content")
+      || document.querySelector(".s-lg-az-result-list")
+      || (container ? container.parentNode : null);
+
+    if (azResults) {
+      contentObserver.observe(azResults, { childList: true, subtree: true });
+    }
+
+    /* ===========================
        SCORING HELPERS
     =========================== */
-    const noFuzzyWords = [
+    const noFuzzyWords = new Set([
       "arts", "business", "history", "music", "science", "news"
-    ];
+    ]);
 
     function fuzzyMatch(query, text) {
       let qi = 0, ti = 0;
@@ -365,168 +580,144 @@
       return qi === query.length;
     }
 
-    /**
-     * Score a single query token against a database name.
-     * Higher is better; 0 = no match.
-     */
-    function scoreToken(token, name) {
-      if (name === token)        return 100;   // exact
-      if (name.startsWith(token)) return 80;   // prefix
+    function wordBoundaryMatch(query, name) {
+      const re = new RegExp("\\b" + query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+      return re.test(name);
+    }
 
-      // word-boundary match: token appears right after a space / hyphen / start
-      const boundary = new RegExp("(?:^|[\\s\\-_/])" + token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
-      if (boundary.test(name)) return 75;
-
-      if (name.includes(token)) return 60;     // substring
-
-      // fuzzy (only for longer, non-ambiguous tokens)
+    function scoreMatch(query, name) {
+      if (name === query) return 100;
+      if (name.startsWith(query)) return 80;
+      if (wordBoundaryMatch(query, name)) return 75;
+      if (name.includes(query)) return 60;
       if (
-        token.length >= 6 &&
-        !noFuzzyWords.includes(token) &&
-        name.includes(token.slice(0, 3)) &&
-        fuzzyMatch(token, name)
+        query.length >= 6 &&
+        !noFuzzyWords.has(query) &&
+        name.includes(query.slice(0, 3)) &&
+        fuzzyMatch(query, name)
       ) return 40;
-
       return 0;
     }
 
-    /**
-     * Multi-word AND: every token must match.
-     * Overall score = minimum token score (weakest link).
-     */
-    function scoreMatch(query, name) {
-      const tokens = query.split(/\s+/).filter(Boolean);
-      if (tokens.length === 0) return 0;
-
-      let minScore = Infinity;
-      for (const t of tokens) {
-        const s = scoreToken(t, name);
-        if (s === 0) return 0;     // AND fails
-        if (s < minScore) minScore = s;
-      }
-      return minScore;
-    }
-
     /* ===========================
-       RESTORE ORIGINAL ORDER
-    =========================== */
-    function restoreOrder() {
-      if (!container || originalOrder.length === 0) return;
-      originalOrder.forEach(child => container.appendChild(child));
-    }
-
-    /* ===========================
-       DEBOUNCE HELPER
+       DEBOUNCE
     =========================== */
     let debounceTimer = null;
-    const DEBOUNCE_MS = 150;
+
+    function debounce(fn, ms) {
+      return function () {
+        const ctx = this, args = arguments;
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => fn.apply(ctx, args), ms);
+      };
+    }
 
     /* ===========================
        MAIN FILTER HANDLER
     =========================== */
-    input.addEventListener("input", function () {
-      clearTimeout(debounceTimer);
-      const raw = this.value;
+    const filterHandler = debounce(function () {
 
-      clearBtn.style.display = raw.trim() ? "block" : "none";
+      const raw   = input.value.trim();
+      const query = raw.toLowerCase();
 
-      debounceTimer = setTimeout(() => {
-        if (subjectActive) return;          // ignore while subject filter is on
+      clearBtn.style.display = raw ? "block" : "none";
 
-        const query = raw.trim().toLowerCase();
+      /* If subject filter just fired, ignore the blank reset */
+      if (suspendTextFilter && query === "") return;
+      suspendTextFilter = false;
 
-        /* -------- RESET -------- */
-        if (query.length < 3) {
-          restoreOrder();
-          data.forEach(db => db.element.style.display = "");
-          headings.forEach(h => h.style.display = "");
-          if (alphaBar) alphaBar.style.display = "";
-          if (noResults) noResults.style.display = "none";
+      /* ── Auto-clear alpha filter if user starts typing ── */
+      if (query.length > 0 && activeAlphaLetter) {
+        clearAlphaFilter();      // navigates away — but set flag so chip hides
+        return;                   // page will reload; nothing more to do
+      }
 
-          if (resultCount) {
-            const n = data.length;
-            resultCount.innerHTML =
-              `<span>${n} Database${n !== 1 ? "s" : ""}</span>`;
-          }
-          return;
+      /* ── RESET when query is short ── */
+      if (query.length < 3) {
+        if (container) {
+          originalOrder.forEach(child => container.appendChild(child));
         }
+        data.forEach(db => (db.element.style.display = ""));
+        headings.forEach(h => (h.style.display = ""));
+        if (alphaBar) alphaBar.style.display = "";
+        if (noResults) noResults.style.display = "none";
 
-        if (alphaBar) alphaBar.style.display = "none";
-
-        /* -------- FILTER + SCORE -------- */
-        const matches = [];
-        let visibleCount = 0;
-
-        data.forEach(db => {
-          const score = scoreMatch(query, db.name);
-
-          if (score > 0) {
-            db.element.style.display = "";
-            matches.push({ db, score });
-            visibleCount++;
-          } else {
-            db.element.style.display = "none";
-          }
-        });
-
-        /* -------- RANK -------- */
-        matches
-          .sort((a, b) =>
-            b.score - a.score || a.db.name.localeCompare(b.db.name)
-          )
-          .forEach(({ db }) => {
-            db.element.parentNode.appendChild(db.element);
-          });
-
-        /* -------- NO RESULTS -------- */
-        if (noResults) {
-          noResults.style.display = visibleCount === 0 ? "" : "none";
-        }
-
-        /* -------- HEADINGS -------- */
-        headings.forEach(heading => {
-          let next = heading.nextElementSibling;
-          let hasVisible = false;
-
-          while (next && !next.classList.contains("s-lg-db-panel-title")) {
-            if (
-              next.classList.contains("az-item") &&
-              next.style.display !== "none"
-            ) {
-              hasVisible = true;
-              break;
-            }
-            next = next.nextElementSibling;
-          }
-
-          heading.style.display = hasVisible ? "" : "none";
-        });
-
-        /* -------- COUNT -------- */
         if (resultCount) {
           resultCount.innerHTML =
-            `<span>${visibleCount} Database${visibleCount !== 1 ? "s" : ""}</span>`;
+            "<span>" + data.length + " Database" +
+            (data.length !== 1 ? "s" : "") + "</span>";
         }
-      }, DEBOUNCE_MS);
-    }, { signal });
+        return;
+      }
 
-    /* ===========================
-       INITIAL DATA COLLECTION
-    =========================== */
-    collectData();
+      if (alphaBar) alphaBar.style.display = "none";
+
+      /* ── Tokenize + AND matching ── */
+      const tokens  = query.split(/\s+/).filter(Boolean);
+      const matches = [];
+      let visible   = 0;
+
+      data.forEach(db => {
+        let total = 0;
+        const allHit = tokens.every(tok => {
+          const s = scoreMatch(tok, db.name);
+          total += s;
+          return s > 0;
+        });
+
+        if (allHit) {
+          db.element.style.display = "";
+          matches.push({ db, score: total });
+          visible++;
+        } else {
+          db.element.style.display = "none";
+        }
+      });
+
+      /* ── Sort by score, then alpha ── */
+      matches
+        .sort((a, b) => b.score - a.score || a.db.name.localeCompare(b.db.name))
+        .forEach(({ db }) => container && container.appendChild(db.element));
+
+      /* ── No results ── */
+      if (noResults) noResults.style.display = visible === 0 ? "" : "none";
+
+      /* ── Headings ── */
+      headings.forEach(heading => {
+        let next = heading.nextElementSibling;
+        let found = false;
+        while (next && !next.classList.contains("s-lg-db-panel-title")) {
+          if (
+            next.classList.contains("az-item") &&
+            next.style.display !== "none"
+          ) { found = true; break; }
+          next = next.nextElementSibling;
+        }
+        heading.style.display = found ? "" : "none";
+      });
+
+      /* ── Count ── */
+      if (resultCount) {
+        resultCount.innerHTML =
+          "<span>" + visible + " Database" +
+          (visible !== 1 ? "s" : "") + "</span>";
+      }
+    }, 150);
+
+    input.addEventListener("input", filterHandler, { signal });
   }
 
-  /* ===========================
+  /* ═══════════════════════════════
      PAGE LIFECYCLE
-  =========================== */
+  ═══════════════════════════════ */
   window.addEventListener("pageshow", function () {
     window.__azEnhancementsInitialized = false;
 
     const tryInit = () => {
-      const searchInput = document.querySelector(".s-lg-az-search");
-      const items       = document.querySelectorAll(".az-item");
+      const input = document.querySelector(".s-lg-az-search");
+      const items = document.querySelectorAll(".az-item");
 
-      if (!searchInput || items.length === 0) {
+      if (!input || items.length === 0) {
         setTimeout(tryInit, 100);
         return;
       }
