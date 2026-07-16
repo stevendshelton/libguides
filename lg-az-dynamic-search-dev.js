@@ -96,6 +96,54 @@
       .s-lg-sel-subjects {
         font-size: 1rem !important;
       }
+
+      /* Enhancements for the custom A–Z search UI */
+      .az-search-wrapper {
+        position: relative;
+      }
+
+      .az-clear-btn {
+        display: none;
+      }
+
+      .az-clear-btn.is-visible {
+        display: block;
+      }
+
+      .az-enhanced-search.is-disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+
+      .az-item.is-hidden {
+        display: none !important;
+      }
+
+      .s-lg-db-panel-title.is-hidden {
+        display: none !important;
+      }
+
+      .az-no-results {
+        display: none;
+        padding: 1rem 0;
+        font-weight: 600;
+        font-size: 1rem;
+      }
+
+      .az-no-results.is-visible {
+        display: block;
+      }
+
+      .az-status {
+        display: none;
+        padding: 0 0 0.5rem;
+        font-size: 0.95rem;
+        color: #555;
+      }
+
+      .az-status.is-visible {
+        display: block;
+      }
     `;
     document.head.appendChild(style);
   }
@@ -179,6 +227,7 @@
     if (!origInput) return;
 
     const input = origInput.cloneNode(true);
+    input.classList.add("az-enhanced-search");
     origInput.parentNode.replaceChild(input, origInput);
 
     const defaultPlaceholder = input.placeholder || "Search databases";
@@ -193,6 +242,7 @@
        CLEAR (✕) BUTTON
     =========================== */
     const wrapper = input.parentNode;
+    wrapper.classList.add("az-search-wrapper");
     wrapper.style.position = "relative";
 
     // Remove any leftover clear button from a prior init
@@ -200,31 +250,30 @@
     if (stale) stale.remove();
 
     const clearBtn = document.createElement("button");
-    clearBtn.type       = "button";
-    clearBtn.className  = "az-clear-btn";
-    clearBtn.innerHTML  = "&#215;";
+    clearBtn.type = "button";
+    clearBtn.className = "az-clear-btn";
+    clearBtn.innerHTML = "&#215;";
     clearBtn.setAttribute("aria-label", "Clear search");
 
     Object.assign(clearBtn.style, {
-      position:   "absolute",
-      right:      "10px",
-      top:        "50%",
-      transform:  "translateY(-50%)",
-      border:     "none",
+      position: "absolute",
+      right: "10px",
+      top: "50%",
+      transform: "translateY(-50%)",
+      border: "none",
       background: "transparent",
-      fontSize:   "18px",
-      cursor:     "pointer",
-      display:    "none",
+      fontSize: "18px",
+      cursor: "pointer",
       lineHeight: "1",
-      padding:    "2px 6px",
-      color:      "#555"
+      padding: "2px 6px",
+      color: "#555"
     });
 
     wrapper.appendChild(clearBtn);
 
     clearBtn.addEventListener("click", function () {
       input.value = "";
-      clearBtn.style.display = "none";
+      updateClearButtonVisibility();
       input.dispatchEvent(new Event("input", { bubbles: true }));
       input.focus();
     }, { signal });
@@ -238,6 +287,37 @@
     let container     = null;    // parent of .az-item elements
     let headings      = [];      // .s-lg-db-panel-title NodeList/Array
     let noResults     = null;    // "No databases match" element
+    let statusEl      = null;    // live region for result messages
+
+    function updateClearButtonVisibility() {
+      clearBtn.classList.toggle("is-visible", input.value.trim() !== "");
+    }
+
+    function updateStatusMessage(message) {
+      if (statusEl) {
+        statusEl.textContent = message;
+        statusEl.classList.toggle("is-visible", Boolean(message));
+      }
+    }
+
+    function updateResultCount(n) {
+      const el = document.getElementById("s-lg-az-result-count");
+      if (!el) return;
+      const label = n === 1 ? "Database" : "Databases";
+      el.textContent = `${n} ${label}`;
+      el.setAttribute("role", "status");
+      el.setAttribute("aria-live", "polite");
+      el.setAttribute("aria-atomic", "true");
+    }
+
+    function setInputDisabledState(isDisabled, placeholderText) {
+      subjectActive = isDisabled;
+      input.disabled = isDisabled;
+      input.placeholder = placeholderText;
+      input.classList.toggle("is-disabled", isDisabled);
+      input.style.opacity = isDisabled ? "0.55" : "";
+      input.style.cursor = isDisabled ? "not-allowed" : "";
+    }
 
     /* ===========================
        (RE-)COLLECT DOM DATA
@@ -289,30 +369,42 @@
       } else if (container) {
         noResults = document.createElement("div");
         noResults.id = "az-no-results";
+        noResults.className = "az-no-results";
         noResults.setAttribute("role", "status");
-        Object.assign(noResults.style, {
-          display:    "none",
-          padding:    "1rem 0",
-          fontWeight: "600",
-          fontSize:   "1rem"
-        });
         container.prepend(noResults);
       }
 
       if (noResults) {
         noResults.textContent = "No databases match your search.";
-        noResults.style.display = "none";
+        noResults.classList.remove("is-visible");
       }
     }
 
-    /* ===========================
-       RESULT COUNT UPDATER
-    =========================== */
-    function updateResultCount(n) {
-      const el = document.getElementById("s-lg-az-result-count");
-      if (!el) return;
-      const label = n === 1 ? "Database" : "Databases";
-      el.innerHTML = `<span>${n} ${label}</span>`;
+    function ensureStatusEl() {
+      if (statusEl && statusEl.parentNode === container) return;
+
+      if (!container) {
+        statusEl = null;
+        return;
+      }
+
+      const existing = container.querySelector("#az-status");
+      if (existing) {
+        statusEl = existing;
+      } else {
+        statusEl = document.createElement("div");
+        statusEl.id = "az-status";
+        statusEl.className = "az-status";
+        statusEl.setAttribute("role", "status");
+        statusEl.setAttribute("aria-live", "polite");
+        statusEl.setAttribute("aria-atomic", "true");
+        container.insertBefore(statusEl, noResults || container.firstChild);
+      }
+
+      if (statusEl) {
+        statusEl.textContent = "";
+        statusEl.classList.remove("is-visible");
+      }
     }
 
     /* ===========================
@@ -333,22 +425,14 @@
     }
 
     function disableSearch() {
-      subjectActive = true;
-      input.value   = "";
+      input.value = "";
       clearNativeSearchState();
-      clearBtn.style.display = "none";
-      input.disabled    = true;
-      input.placeholder = "Clear subject filter to search";
-      input.style.opacity = "0.55";
-      input.style.cursor  = "not-allowed";
+      setInputDisabledState(true, "Clear subject filter to search");
+      updateClearButtonVisibility();
     }
 
     function enableSearch() {
-      subjectActive = false;
-      input.disabled    = false;
-      input.placeholder = defaultPlaceholder;
-      input.style.opacity = "";
-      input.style.cursor  = "";
+      setInputDisabledState(false, defaultPlaceholder);
     }
 
     /* ===========================
@@ -419,9 +503,15 @@
 
     function scoreMatch(query, name) {
       if (name === query) return 100;
+      
+      // Starts with query at word boundary (highest priority for word starts)
+      if (name.startsWith(query + " ") || name.startsWith(query + "-") || /^[^\w]/.test(name.slice(query.length))) {
+        return 90;
+      }
+      
       if (name.startsWith(query)) return 80;
 
-      // Word-boundary bonus
+      // Word-boundary bonus (anywhere in the name)
       const wordBoundary = new RegExp("(?:^|[\\s\\-_/,()])" + query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
       if (wordBoundary.test(name)) return 75;
 
@@ -457,7 +547,7 @@
 
     function handleInput() {
       const query = input.value.trim().toLowerCase();
-      clearBtn.style.display = query ? "block" : "none";
+      updateClearButtonVisibility();
 
       if (subjectActive && query === "") return;
 
@@ -469,11 +559,16 @@
             container.appendChild(node);
           });
         }
-        data.forEach(function (db) { db.element.style.display = ""; });
-        headings.forEach(function (h) { h.style.display = ""; });
+        data.forEach(function (db) {
+          db.element.classList.remove("is-hidden");
+        });
+        headings.forEach(function (h) {
+          h.classList.remove("is-hidden");
+        });
         if (alphaBar) alphaBar.style.display = "";
-        if (noResults) noResults.style.display = "none";
+        if (noResults) noResults.classList.remove("is-visible");
         updateResultCount(data.length);
+        updateStatusMessage("");
         return;
       }
 
@@ -486,24 +581,17 @@
       data.forEach(function (db) {
         const score = multiWordScore(query, db.name);
         if (score > 0) {
-          db.element.style.display = "";
+          db.element.classList.remove("is-hidden");
           matches.push({ db: db, score: score });
           visibleCount++;
         } else {
-          db.element.style.display = "none";
+          db.element.classList.add("is-hidden");
         }
-      });
-
-      // RANK (score desc, then alpha asc)
-      matches.sort(function (a, b) {
-        return b.score - a.score || a.db.name.localeCompare(b.db.name);
-      }).forEach(function (m) {
-        m.db.element.parentNode.appendChild(m.db.element);
       });
 
       // NO RESULTS
       if (noResults) {
-        noResults.style.display = visibleCount === 0 ? "" : "none";
+        noResults.classList.toggle("is-visible", visibleCount === 0);
       }
 
       // HEADINGS
@@ -513,22 +601,32 @@
         while (next && !next.classList.contains("s-lg-db-panel-title")) {
           if (
             next.classList.contains("az-item") &&
-            next.style.display !== "none"
+            !next.classList.contains("is-hidden")
           ) {
             hasVisible = true;
             break;
           }
           next = next.nextElementSibling;
         }
-        heading.style.display = hasVisible ? "" : "none";
+        heading.classList.toggle("is-hidden", !hasVisible);
       });
 
       updateResultCount(visibleCount);
+      updateStatusMessage(visibleCount === 0 ? "No databases match your search." : "");
     }
 
     input.addEventListener("input", function () {
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(handleInput, 150);
+    }, { signal });
+
+    input.addEventListener("keydown", function (event) {
+      if (event.key === "Escape") {
+        input.value = "";
+        updateClearButtonVisibility();
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+        input.focus();
+      }
     }, { signal });
 
     /* ===========================
@@ -541,6 +639,8 @@
       clearTimeout(mutTimer);
       mutTimer = setTimeout(function () {
         collectData();
+        ensureNoResultsEl();
+        ensureStatusEl();
         hookClearButtons();
 
         // Re-enforce font sizes after AJAX swap
@@ -560,9 +660,13 @@
       }, 200);
     });
 
-    const resultsPane = document.getElementById("s-lg-az-content")
-                     || document.getElementById("s-lg-az-results")
-                     || (container ? container.parentNode : null);
+    let resultsPane = document.getElementById("s-lg-az-content")
+                   || document.getElementById("s-lg-az-results");
+
+    if (!resultsPane) {
+      collectData();
+      resultsPane = container ? container.parentNode : null;
+    }
 
     if (resultsPane) {
       contentObserver.observe(resultsPane, { childList: true, subtree: true });
@@ -570,6 +674,8 @@
 
     // INITIAL DATA COLLECTION
     collectData();
+    ensureNoResultsEl();
+    ensureStatusEl();
 
     // Enforce font size one more time after init
     enforceSubjectFontSize();
