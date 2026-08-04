@@ -171,21 +171,18 @@
 </div>
 <a id="libraryh3lp" class="lib-c-btn lib-c-btn--burgandy lib-c-btn--rounded-corners lib-c-btn--floating-bottom-right lib-c-btn--floating-bottom-right-rectangle lib-c-btn--large lib-c-btn--wide-side-pad" href="https://www.utc.edu/library/help" target="_blank"><i class="fa fa-comment lib-c-btn__icon-before"></i> Ask a Librarian</a></div>
 <!-- LGv2.01 END Custom footer-->
-<!-- fix for GA4 URL append next in script -->
 <script>
-/*
-  var uriGA = window.location.href.toString();
-  if (uriGA.indexOf("?") > 0) {
-          var clean_uri = uriGA.substring(0, uriGA.indexOf("?_gl="));
-          window.history.replaceState({}, document.title, clean_uri);
-        }
-*/
 /* fix for GA4 URL append - preserves any #hash */
-var url = new URL(window.location.href);
-if (url.search) {
-  var clean_uri = url.origin + url.pathname + url.hash;
-  window.history.replaceState({}, document. Title, clean_uri);
-}
+$(function() {
+
+    if (window.location.hash) {
+
+        const hash = window.location.hash;
+
+        $('a[href="' + hash + '"]').trigger('click');
+    }
+
+});
 /****B/C Safari won't play nice with the Apply Now transitions, we're going to add the browser as a ribbon class****/
 /****This only works in the footer of LibGuides because their custom JS section only adds to the head****/
 (($) => {
@@ -296,7 +293,7 @@ var newItem=document.createElement("LI");
     var a=document.createElement('a');
     var linkText=document.createTextNode("UTC");
     a.appendChild(linkText);
-    a.title="UTC!";
+    a.title="UTC";
     a.href="https://utc.edu";
     newItem.appendChild(a);
     var list=document.getElementById("s-lib-bc-list");
@@ -305,7 +302,7 @@ var newItem=document.createElement("LI");
     var a2=document.createElement('a');
     var linkText2=document.createTextNode("Research Help");
     a2.appendChild(linkText2);
-    a.title="Research Help";
+    a2.title="Research Help";
     a2.href="https://utc.edu/library/help";
     newItem2.appendChild(a2);
     var list2=document.getElementById("s-lib-bc-list");
