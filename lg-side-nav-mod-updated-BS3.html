@@ -1,0 +1,150 @@
+<style>
+    /* Hide group in breadcrumb */
+    #s-lib-bc-group {
+      display:none;
+    }
+
+  /*admin column edits*/
+#s-lg-admin-addbox-3 {
+    text-align: center;
+}
+#s-lg-admin-addbox-1 a:after{
+  content:' (75%)';
+}
+#s-lg-admin-addbox-2 a:after{
+  content:' (25%)';
+}
+#s-lg-admin-addbox-3 a:after{
+  content:' (100% - use this box for full-width | Do not use column 1 & 2 with this box!)';
+}
+
+
+</style>
+<body class="s-lg-guide-body">
+  {{skip_link}}
+      {{ADMIN_CMD_BAR}}
+      <!-- BEGIN: Page Header -->
+      {{public_header}}
+      <!-- END: Page Header -->
+      <!-- BEGIN: Guide Header -->
+    <div id="s-lg-guide-header" class="container s-lib-header s-lib-side-borders">
+          <div id="s-lib-bc">
+              {{breadcrumbs}}
+          </div>
+    <div class="pull-right">
+
+<!--
+      <div id="s-lg-guide-header-search">
+        {{guide_search}}				</div>
+-->
+      {{ADMIN_MINI_CMD_BAR}}
+    </div>
+
+          <div id="s-lg-guide-header-info">
+          </div>
+      </div>
+      <!-- END: Guide Header -->
+  <div id="s-lg-guide-tabs-title-bar" class="container s-lib-side-borders"></div>
+      <div id="s-lg-side-nav-content" class="container s-lib-side-borders pad-top-med">
+<h1 id="s-lg-guide-name">{{guide_title}} : {{page_title}}</h1>
+          <div class="row-fluid wrap">
+              <div class="col-md-3 s-lg-tabs-side pad-bottom-med">
+                  <div id="s-lg-tabs-container">
+                      <div id="s-lg-guide-tabs" class="fluid-container navbar navbar-default">
+<div class="navbar-header lg-btn-div">
+  <button type="button" class="navbar-toggle lg-btn" data-toggle="collapse" data-target="#lg-nav">
+      <span class="sr-only">Toggle navigation</span>
+Section Menu <span class="icon-reorder"></span>
+  </button>
+</div>
+<div class="collapse navbar-collapse" id="lg-nav">
+<ul class="nav nav-pills nav-stacked lg-nav">
+<li class="breadcrumb-back"><a href="/"><i class="fa fa-arrow-circle-left" aria-hidden="true"></i> Subject Guides Home</a></li>
+<!--
+<li class="breadcrumb-back"><a href="{{guide_url}}">{{guide_title}}</a></li>
+-->
+{{guide_nav}}
+
+</ul>
+{{side_nav_boxes}}
+</div>
+             </div>
+                  </div>
+              </div>
+              <div class="col-md-9">
+                  <div class="s-lg-tab-content">
+                      <div id="s-lg-guide-main" class="tab-pane active">
+
+<div class="row-fluid s-lg-row">
+<div class="row-fluid s-lg-row">
+
+              <div id="s-lg-guide-desc-container">
+                 <span id="s-lg-guide-description">{{guide_description}}</span>
+              </div>
+   <div id="s-lg-col-1" class="col-md-8">
+        <div class="s-lg-col-boxes">
+             {{content_col_1}}
+        </div>
+   </div>
+   <div id="s-lg-col-2" class="col-md-4">
+        <div class="s-lg-col-boxes">
+             {{content_col_2}}
+        </div>
+   </div>
+
+</div>
+   <div id="s-lg-col-3" class="col-md-12">
+        <div class="s-lg-col-boxes">
+             {{content_col_3}}
+        </div>
+   </div>
+</div>
+
+                      </div>
+                  </div>
+                  {{page_prev_next_links}}
+              </div>
+          </div>
+      </div>
+      <!-- BEGIN: Page Footer 
+      <div id="s-lib-footer-public" class="s-lib-footer footer container  s-lib-side-borders">
+          <div id="s-lg-guide-header-meta" class="pad-top-sm pad-left-med clearfix">
+              <ul id="s-lg-guide-header-attributes" class="">
+                  <li id="s-lg-guide-header-updated" class="s-lg-h-separator">
+                      {{last_updated_display}}                    </li>
+                  <li id="s-lg-guide-header-url" class="s-lg-h-separator">
+                      {{guide_url_display}}
+                  </li>
+                  <li id="s-lg-guide-print-url">
+                    {{print_url_display}}
+                  </li>
+                  </ul>
+              <div id="s-lib-footer-login-link" class="pull-right pad-right-med">
+                  {{login_url_display}}                </div>
+          </div>
+          <div class="pad-bottom-sm clearfix">
+              <div id="s-lib-footer-support-link" class="pull-right pad-right-med">
+
+              </div>
+              <div id="s-lg-guide-header-subjects" class="pad-top-sm pad-left-med pad-right-med pull-left">
+                  {{guide_subjects}}
+              </div>
+              <div id="s-lg-guide-header-tags" class="pad-top-sm pad-left-med">
+                  {{guide_tags}}
+              </div>
+          </div>
+      </div>-->
+      <!-- END: Page Footer -->
+
+    <div id="s-lib-scroll-top" title="Back to Top">
+      <span class="fa-stack fa-lg">
+        <i class="fa fa-square-o fa-stack-2x"></i>
+        <i class="fa fa-angle-double-up fa-stack-1x"></i>
+      </span>
+    </div>        <div id="s-lib-alert" title="">
+                          <div id="s-lib-alert-content"></div>
+                     </div>
+              <!-- BEGIN: Custom Footer -->
+              {{public_footer}}
+  <!-- END: Custom Footer -->
+</body>
