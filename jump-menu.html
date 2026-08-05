@@ -1,0 +1,114 @@
+<div id="jump-nav">&nbsp;</div>
+<script>
+  
+    function handleStickyMenu() {
+    
+        if (window.innerWidth < 1024) {
+            $('#s-lg-tabs-container').removeClass('fixed-nav');
+            return;
+        }
+    
+        if ($(window).scrollTop() > 150) {
+            $('#s-lg-tabs-container').addClass('fixed-nav');
+        } else {
+            $('#s-lg-tabs-container').removeClass('fixed-nav');
+        }
+    }
+    
+    $(window).on('scroll resize', handleStickyMenu);
+    
+    handleStickyMenu();
+    $(function() {
+
+    function slugify(text) {
+        return text
+            .toLowerCase()
+            .replace(/&/g, '')
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-|-$/g, '');
+    }
+
+    var $list = $('<ul class="nav nav-pills nav-stacked"></ul>');
+
+    $('.s-lib-box').not('#jump-menu-box').each(function() {
+
+        var $box = $(this);
+        var title = $box.find('.s-lib-box-title').first().text().trim();
+
+        if (!title) return;
+
+        var slug = slugify(title);
+
+        if (!document.getElementById(slug)) {
+            $box.prepend('<span id="' + slug + '"></span>');
+        }
+
+        $list.append(
+            $('<li>').append(
+                $('<a>')
+                    .attr('href', '#' + slug)
+                    .text(title)
+            )
+        );
+    });
+
+    $('#jump-nav').empty().append($list);
+
+});
+    /* NEW SCRIPT BEGIN 
+    function slugify(text) {
+        return text
+            .toLowerCase()
+            .replace(/&/g, 'and')
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-|-$/g, '');
+    }
+
+    $('.s-lib-box').not('#jump-menu-box').each(function () {
+
+        var $box = $(this);
+        var title = $box.find('.s-lib-box-title').first().text().trim();
+
+        if (!title) return;
+
+        var slug = slugify(title);
+
+        $box.attr('id', slug);
+
+        $list.append(
+            $('<li>').append(
+                $('<a>')
+                    .attr('href', '#' + slug)
+                    .text(title)
+            )
+        );
+    });
+    NEW SCRIPT END */
+</script>
+<style type="text/css">.s-lib-box {
+        scroll-margin-top: 150px;
+    }
+
+    html {
+        scroll-behavior: smooth;
+    }
+
+    .fixed-nav {
+        position: fixed;
+        top: 150px;
+        width: 275px;
+    }
+
+    ul.split-button-nav {
+        display: none;
+    }
+
+    @media (max-width: 767px) {
+
+        #s-lg-tabs-container {
+            position: static !important;
+            top: auto !important;
+        }
+
+    }
+</style>
