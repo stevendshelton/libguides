@@ -1,61 +1,61 @@
 <div id="jump-nav">&nbsp;</div>
 <script>
-  
+
     function handleStickyMenu() {
-    
+
         if (window.innerWidth < 1024) {
             $('#s-lg-tabs-container').removeClass('fixed-nav');
             return;
         }
-    
+
         if ($(window).scrollTop() > 150) {
             $('#s-lg-tabs-container').addClass('fixed-nav');
         } else {
             $('#s-lg-tabs-container').removeClass('fixed-nav');
         }
     }
-    
+
     $(window).on('scroll resize', handleStickyMenu);
-    
+
     handleStickyMenu();
-    $(function() {
+    $(function () {
 
-    function slugify(text) {
-        return text
-            .toLowerCase()
-            .replace(/&/g, '')
-            .replace(/[^a-z0-9]+/g, '-')
-            .replace(/^-|-$/g, '');
-    }
-
-    var $list = $('<ul class="nav nav-pills nav-stacked"></ul>');
-
-    $('.s-lib-box').not('#jump-menu-box').each(function() {
-
-        var $box = $(this);
-        var title = $box.find('.s-lib-box-title').first().text().trim();
-
-        if (!title) return;
-
-        var slug = slugify(title);
-
-        if (!document.getElementById(slug)) {
-            $box.prepend('<span id="' + slug + '"></span>');
+        function slugify(text) {
+            return text
+                .toLowerCase()
+                .replace(/&/g, '')
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/^-|-$/g, '');
         }
 
-        $list.append(
-            $('<li>').append(
-                $('<a>')
-                    .attr('href', '#' + slug)
-                    .text(title)
-            )
-        );
+        var $list = $('<ul class="nav nav-pills nav-stacked"></ul>');
+
+        $('.s-lib-box').not('#jump-menu-box').each(function () {
+
+            var $box = $(this);
+            var title = $box.find('.s-lib-box-title').first().text().trim();
+
+            if (!title) return;
+
+            var slug = slugify(title);
+
+            if (!document.getElementById(slug)) {
+                $box.prepend('<span id="' + slug + '"></span>');
+            }
+
+            $list.append(
+                $('<li>').append(
+                    $('<a>')
+                        .attr('href', '#' + slug)
+                        .text(title)
+                )
+            );
+        });
+
+        $('#jump-nav').empty().append($list);
+
     });
-
-    $('#jump-nav').empty().append($list);
-
-});
-    /* NEW SCRIPT BEGIN 
+    /* NEW SCRIPT BEGIN
     function slugify(text) {
         return text
             .toLowerCase()
@@ -85,7 +85,8 @@
     });
     NEW SCRIPT END */
 </script>
-<style type="text/css">.s-lib-box {
+<style type="text/css">
+    .s-lib-box {
         scroll-margin-top: 150px;
     }
 
@@ -110,5 +111,9 @@
             top: auto !important;
         }
 
+    }
+
+    .s-lib-box span[id] {
+        scroll-margin-top: 200px;
     }
 </style>
