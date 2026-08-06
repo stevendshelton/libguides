@@ -55,35 +55,6 @@
         $('#jump-nav').empty().append($list);
 
     });
-    /* NEW SCRIPT BEGIN
-    function slugify(text) {
-        return text
-            .toLowerCase()
-            .replace(/&/g, 'and')
-            .replace(/[^a-z0-9]+/g, '-')
-            .replace(/^-|-$/g, '');
-    }
-
-    $('.s-lib-box').not('#jump-menu-box').each(function () {
-
-        var $box = $(this);
-        var title = $box.find('.s-lib-box-title').first().text().trim();
-
-        if (!title) return;
-
-        var slug = slugify(title);
-
-        $box.attr('id', slug);
-
-        $list.append(
-            $('<li>').append(
-                $('<a>')
-                    .attr('href', '#' + slug)
-                    .text(title)
-            )
-        );
-    });
-    NEW SCRIPT END */
 </script>
 <style type="text/css">
     .s-lib-box {
@@ -96,8 +67,10 @@
 
     .fixed-nav {
         position: fixed;
-        top: 150px;
+        top: 100px;
         width: 275px;
+        max-height: calc(100vh - 40px);
+        overflow: auto;
     }
 
     ul.split-button-nav {
