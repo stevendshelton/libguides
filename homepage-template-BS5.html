@@ -1,0 +1,351 @@
+<style>/* Ensure the anchor link fills the entire pill area */
+ul.nav.nav-pills > li > a {
+  display: block !important;
+  width: 100% !important;
+}
+
+/* Hide built-in guide search forms */
+form:has(input[placeholder*="Search Guides"]),
+form:has(input[name="q"]) {
+  display: none !important;
+}
+
+/* Reduce excess whitespace above breadcrumbs/title */
+#s-lib-public-header {
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+}
+
+#s-lib-bc {
+  margin-top: 0;
+  padding-top: .25rem;
+}
+
+#s-lib-public-header-title {
+  margin-top: .25rem;
+  margin-bottom: .5rem;
+}
+
+/* Guide count */
+#lgTotal {
+  padding: 0 1em 1em 0;
+  font-size: 1em;
+  font-style: italic;
+  display: block;
+}
+
+/* Guide listing layout */
+#lgContent ul {
+  margin: 0;
+  padding-left: 0;
+}
+
+#lgContent li {
+  list-style: none;
+}
+
+.guide-btn {
+  display: block;
+  width: 100%;
+}
+
+#lgContent a.btn {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  text-align: left;
+  font-size: 1em;
+  font-weight: bold;
+  padding: .5em 1em;
+  background-color: #ffffff;
+  color: #112E51;
+  border: 2px solid #112E51;
+  margin: 0 .5em .5em 0;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+#lgContent a.btn:hover,
+#lgContent a.btn:visited:hover {
+  background-color: #FDB736;
+  color: #112E51;
+  border-color: #FDB736;
+  text-decoration: none !important;
+}
+
+/* Navigation */
+
+.nav-tabs {
+  border-bottom: none;
+}
+
+#lgNav {
+  margin-bottom: 1rem;
+}
+
+/* Default tab/button appearance */
+#lgNav .nav-tabs > li > a,
+#lgNav .nav-pills > li > a {
+  color: #ffffff;
+  background-color: #00386b;
+  font-weight: bold;
+  font-size: 1.1em;
+
+  border: 2px solid #00386b;
+  border-radius: 6px;
+
+  padding: .65em 1.25em;
+  margin-right: .25em;
+
+  box-shadow: 0 2px 4px rgba(0,0,0,.15);
+
+  text-decoration: none;
+}
+
+/* Hover state */
+/* No transform, no size change */
+#lgNav .nav-tabs > li > a:hover,
+#lgNav .nav-pills > li > a:hover {
+  color: #00386b;
+  background-color: #FDB736;
+  border-color: #00386b;
+  text-decoration: none;
+}
+
+/* Active state */
+/* Supports both BS3 and BS5 */
+#lgNav .nav-tabs > .active > a,
+#lgNav .nav-tabs > .active > a:hover,
+#lgNav .nav-tabs > .active > a:focus,
+#lgNav .nav-tabs a.active,
+
+#lgNav .nav-pills > .active > a,
+#lgNav .nav-pills > .active > a:hover,
+#lgNav .nav-pills > .active > a:focus,
+#lgNav .nav-pills a.active {
+  color: #00386b;
+  background-color: #ffffff;
+  font-weight: bold;
+
+  border: 2px solid #00386b;
+  border-radius: 6px;
+
+  box-shadow: 0 2px 8px rgba(0,56,107,.2);
+}
+
+/* Search form */
+#lgNav form {
+  margin: 0 0 -2px 0;
+  font-size: 1em;
+  font-weight: bold;
+}
+
+#lgNav form input {
+  margin-bottom: 0;
+  font-size: 1em !important;
+  min-height: 2em;
+}
+
+/* Mobile */
+
+@media all and (max-width: 575px) {
+
+  #lgNav .nav-pills > li > a {
+    margin: 0;
+  }
+
+  #lgNav .nav-pills > li {
+    display: block;
+    width: 100%;
+    margin-bottom: .5em;
+  }
+}
+
+/* Tablet/Desktop */
+
+@media all and (min-width: 576px) {
+
+  #lgNav .nav-pills > li > a {
+    margin: .5em .2em .5em 0;
+  }
+}
+
+/* Multi-column guide list */
+
+@media all and (min-width: 900px) {
+
+  #lgContent {
+    -webkit-column-gap: 1%;
+    -moz-column-gap: 1%;
+    column-gap: 1%;
+  }
+
+  .twoColumns {
+    -webkit-column-count: 2;
+    -moz-column-count: 2;
+    column-count: 2;
+  }
+
+  .threeColumns {
+    -webkit-column-count: 3;
+    -moz-column-count: 3;
+    column-count: 3;
+  }
+}
+</style>
+
+<body class="s-lib-public-body">
+		{{skip_link}}
+        <!-- BEGIN: Page Header -->
+            {{public_header}}
+        <!-- END: Page Header -->
+        <!-- BEGIN: Content Header -->
+        <div id="s-lib-public-header" class="s-lib-header container s-lib-side-borders">
+            <div id="s-lib-bc">
+                {{breadcrumbs}}
+            </div>
+<h1 id="s-lib-public-header-title" style="padding-left: 15px;">Research Guides</h1>
+            <div id="s-lib-public-header-desc">{{system_intro}}
+</div>
+        </div>
+        <!-- END: Content Header -->
+
+        <!-- BEGIN: content -->
+        <div id="s-lib-public-main" class="s-lib-main container s-lib-side-borders">
+            <div  id="s-lg-index-cols"  class="frow">
+                <div  id="col1"  class="col-md-12 col-sm-12">
+<!--
+                    <div class="clearfix">
+-->
+  <div id="lgNav" class="frow">
+<ul class="nav nav-tabs in">
+  <li><a href='#all'>All Guides</a></li>
+  <li><a href='#subject'>Subject Guides</a></li>
+  <li><a href='#course'>Course Guides</a></li>
+<li><a href='#topic'>Topic Guides</a></li>
+<li class="pull-right">
+   {{search_guides}}
+</li>
+</ul>
+
+</div>
+<!--
+<div id="s-lg-hp-nav"> 
+<ul>
+                                <li id="s-lg-hp-nav-bottom">
+
+                                    <div class="clearfix">
+                                        {{search_guides}}
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+
+
+                    </div>
+-->
+<div id="lgTotal"></div>
+<div id="lgContent" class="threeColumns"></div>
+                </div>
+<!-- remove side bar
+                <div  id="col2"  class="col-md-4">
+                    {{content_boxes}}
+                </div>
+-->
+            </div>
+        </div>
+        <!-- END: content -->
+        <!-- BEGIN: Page Footer
+        {{system_footer}}
+    END: Page Footer -->
+        <div id="s-lib-alert" title="">
+                            <div id="s-lib-alert-content"></div>
+                       </div>        
+                <div id="s-lib-popover-title" class="hide">
+                    <span class="text-info"><strong>title</strong></span> 
+                    <button type="button" id="popclose" class="close" onclick="jQuery('.s-lib-popover').popover('hide')">&times;</button> 
+                </div>
+                <div id="s-lib-popover-content" class="hide"><i class="fa fa-refresh fa-spin"></i> Loading...
+                    <button class="btn btn-default btn-sm popclose" type="button">Close</button>
+                </div>        
+			<div id="s-lib-scroll-top" title="Back to Top">
+				<span class="fa-stack fa-lg">
+				  <i class="fa fa-square-o fa-stack-2x"></i>
+				  <i class="fa fa-angle-double-up fa-stack-1x" style="position:relative; bottom:2px;"></i>
+				</span>
+			</div>        <!-- BEGIN: Custom Footer -->
+<div style="clear:both;"></div>
+        {{public_footer}}
+        <!-- END: Custom Footer -->
+	</body>
+<script type="text/javascript" language="javascript">// <![CDATA[
+jQuery(document).ready(function() {
+var hash = '';
+getHash();
+screenSize();
+});
+jQuery(window).resize(function() {
+screenSize();
+});
+function screenSize(){
+respWidth = navigator.userAgent.indexOf('AppleWebKit/') > -1 ? jQuery(window).width() : window.innerWidth; 
+ 	if (respWidth > 1200){
+console.log('screen size greater than 1200');
+jQuery('#lgNav ul').addClass('nav-tabs');
+jQuery('#lgNav ul').removeClass('nav-pills');
+}else{
+console.log('screen size less than 1200');
+jQuery('#lgNav ul').removeClass('nav-tabs');
+jQuery('#lgNav ul').addClass('nav-pills');
+}
+}
+jQuery('#lgNav ul li a').click(function(){
+  jQuery('#lgContent').html('');
+  hash = jQuery(this).attr("href");
+jQuery('#lgNav ul li').removeClass('active');
+jQuery('#lgNav ul li a').removeClass('active');
+
+jQuery(this).parent('li').addClass('active');
+jQuery(this).addClass('active');
+  guideType = parseHash(hash);
+  getContent(guideType);
+});
+function getContent(guideType){
+  var counter = 0;
+  var url = "//lgapi-us.libapps.com/1.1/guides?site_id=197&key=79bdc1495b75e4857998a4bf192051a6&sort_by=name&status=1"+guideType;
+  var lg2Content = '';
+  $.getJSON(url,function(result){
+var lgContent="<ul>";
+  $.each(result, function(i, field){
+    //$("#lgContent").append("<button type='button' class='btn btn-block btn-large'><a href="+field['friendly_url']+">"+field['name']+"<span class='badge pull-right'>"+field['count_hit']+"</span></a></button>");
+    lgContent += "<li><a class='btn guide-btn' href="+field['friendly_url']+">"+field['name']+"</a></li>";
+    counter++;
+    });
+lgContent += "</ul>";
+$("#lgContent").html(lgContent);
+      if (counter > 19){$("#lgContent").removeClass('twoColumns');$("#lgContent").addClass('threeColumns');}
+      else if ((counter < 20)&&(counter > 10)){$("#lgContent").removeClass('threeColumns');$("#lgContent").addClass('twoColumns');}
+      else {$("#lgContent").removeClass('twoColumns');$("#lgContent").removeClass('threeColumns');}
+	  $('#lgTotal').html('Showing ' + counter + ' Guides');
+  });
+}
+
+function getHash(){
+	//get hash
+	var hash = window.location.hash;
+  guideType = parseHash(hash);
+console.log(guideType);
+  getContent(guideType);
+  var link = jQuery('#lgNav ul li a[href="' + hash + '"]');
+
+link.parent('li').addClass('active');
+link.addClass('active');
+}
+function parseHash(hash){
+  if (hash == '#course'){var guideType = '&guide_types=2';}
+  else if (hash == '#topic'){var guideType = '&guide_types=4';}
+  else if (hash == '#subject'){var guideType = '&guide_types=3';}
+  else {var guideType = '';}
+  return guideType;
+}
+
+// ]]></script>
